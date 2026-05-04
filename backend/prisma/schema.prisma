@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Concessao {
+  id          String    @id @default(uuid())
+  name        String
+  dealerCode  String    @unique
+  brand       String    @default("hyundai")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  prizes      Prize[]
+  cards       Card[]
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         String    @default("USER")
+  status       String    @default("PENDING")
+  brands        String    @default("")
+  pendingBrands String    @default("")
+  concessaoIds  String    @default("")
+  nif          String?
+  concessaoId  String?
+  concessao    Concessao? @relation(fields: [concessaoId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  deactivatedAt  DateTime?
+
+  cards                Card[]
+  prizes               Prize[]
+  prizeImports         PrizeImport[]
+  cardBalanceUpdates   CardBalanceHistory[]
+  cardLoadingHistory   CardLoadingHistory[]
+}
+
+model Origin {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  area        String    @default("")
+  estado      String    @default("S")
+  matricula   String    @default("S")
+  modelo      String    @default("N")
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  prizes             Prize[]
+  cardLoadingHistory CardLoadingHistory[]
+}
+
+model Card {
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  concessaoId         String
+  concessao           Concessao @relation(fields: [concessaoId], references: [id])
+  cardNumber          String    @unique
+  seriesNumber        String
+  status              String    @default("PENDING")
+  balance             Float     @default(0)
+  declarationUrl      String?
+  rejectionReason     String?
+  validatedBy         String?
+  validatedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  balanceHistory     CardBalanceHistory[]
+  loadingHistory     CardLoadingHistory[]
+}
+
+model CardBalanceHistory {
+  id            String   @id @default(uuid())
+  cardId        String
+  card          Card     @relation(fields: [cardId], references: [id])
+  balanceValue  Float
+  movementValue Float
+  updatedById   String
+  updatedBy     User     @relation(fields: [updatedById], references: [id])
+  updatedAt     DateTime @default(now())
+  notes         String?
+}
+
+model Prize {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  concessaoId     String
+  concessao       Concessao @relation(fields: [concessaoId], references: [id])
+  originId        String?
+  origin          Origin?   @relation(fields: [originId], references: [id])
+  area            String?
+  value           Float
+  period          String
+  status          String    @default("PENDENTE")
+  importDate      DateTime  @default(now())
+  validationDate  DateTime?
+  paymentDate     DateTime?
+  importedById    String?
+  validatedById   String?
+  rejectionReason String?
+  prizeImportId   String?
+  prizeImport     PrizeImport? @relation(fields: [prizeImportId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model PrizeImport {
+  id           String   @id @default(uuid())
+  importedById String
+  importedBy   User     @relation(fields: [importedById], references: [id])
+  fileUrl      String
+  importedAt   DateTime @default(now())
+  status       String   @default("PROCESSING")
+  errorDetails String?
+  importType   String   @default("prizes")
+  prizes       Prize[]
+}
+
+model CardLoadingHistory {
+  id            String   @id @default(uuid())
+  cardId        String
+  card          Card     @relation(fields: [cardId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  originId      String?
+  origin        Origin?  @relation(fields: [originId], references: [id])
+  movementValue Float
+  balanceValue  Float
+  loadedAt      DateTime @default(now())
+  loadedById    String
+  extranetLogin String?
+}

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Read(//c/Users/acgrcs/.claude/projects/C--Users-acgrcs-cartoes-da/**)",
+      "Read(//c/Users/acgrcs/.claude/projects/C--Users-acgrcs-cartoes-da/memory/**)",
+      "Bash(pg_isready)",
+      "Bash(psql --version)",
+      "Bash(npx prisma *)",
+      "Bash(npx ts-node *)",
+      "Bash(npx ts-node-dev *)",
+      "Bash(curl -s http://localhost:3001/api/health)",
+      "Bash(npx vite *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(start *)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@hyundai.pt\",\"password\":\"password123\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/register -H 'Content-Type: application/json' -d '{\"name\":\"Teste Registo\",\"email\":\"teste@hyundai.pt\",\"password\":\"teste123\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK -', d['user']['name'], d['user']['role']\\)\")",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{len\\(d\\)} concessoes: {[c[\\\\\"name\\\\\"] for c in d]}'\\)\")",
+      "WebSearch",
+      "WebFetch(domain:commons.wikimedia.org)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(npx tsx *)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "Bash(cmd *)",
+      "Bash(powershell *)",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(python3 *)"
+    ]
+  }
+}
