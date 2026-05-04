@@ -149,9 +149,8 @@ export default function CardBalancePage() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-gray-100 px-4 py-3 text-sm text-gray-500 flex items-center justify-between">
+          <div className="border-t border-gray-100 px-4 py-3 text-sm text-gray-500">
             <span><span className="font-medium text-gray-700">{cards.length}</span> cartão(ões)</span>
-            <span>Saldo total: <span className="font-semibold text-brand-primary">{fmtMoney(cards.reduce((s, c) => s + Number(c.balance), 0))} €</span></span>
           </div>
           </>
         )}
