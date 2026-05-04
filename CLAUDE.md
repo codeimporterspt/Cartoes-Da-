@@ -8,11 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Start both servers (from root)
 npm run dev:backend      # backend on :3001
-npm run dev:frontend     # frontend on :5173 (proxies /api → :3001)
+npm run dev:frontend     # frontend on :5173 (proxies /api and /uploads → :3001)
 
 # Or individually
 cd backend && npm run dev          # ts-node-dev with hot reload
 cd frontend && npm run dev         # Vite HMR
+
+# Production
+cd backend && npm run build && npm run start
 ```
 
 ### Database
@@ -32,6 +35,25 @@ cd frontend && npm run lint         # ESLint on .ts/.tsx
 cd frontend && npm run build        # tsc + vite build
 cd backend  && npm run build        # tsc → dist/
 ```
+
+## First-time setup
+
+Create `backend/.env` (copy from `backend/.env.example`). For local dev with SQLite:
+```env
+DATABASE_URL="file:./prisma/dev.db"
+JWT_SECRET="any-local-secret"
+PORT=3001
+# SMTP fields are optional locally — emails are fire-and-forget
+```
+
+`frontend/.env` is not needed locally — Vite proxies `/api` and `/uploads` to `:3001` via `vite.config.ts`. `VITE_API_URL` in `frontend/.env.example` is unused.
+
+### Seed credentials
+| Role | Email | Password |
+|---|---|---|
+| ADMIN | admin@hyundai.pt | password123 |
+| USER | joao.silva@hyundai.pt | password123 |
+| USER | maria.santos@hyundai.pt | password123 |
 
 ## Architecture
 
