@@ -38,7 +38,7 @@ const emptyForm: UserForm = {
   name: '', email: '', password: '', role: 'USER', nif: '', brands: [], concessaoPerBrand: {},
 };
 
-type Tab = 'active' | 'pending' | 'inactive';
+type Tab = 'active' | 'pending' | 'inactive' | 'rejected';
 
 function BrandsCheckboxes({
   selected,
@@ -177,6 +177,17 @@ export default function UsersPage() {
       }).then(r => r.data as User[]),
   });
 
+  const { data: rejectedRaw = [], isLoading: loadingRejected } = useQuery({
+    queryKey: ['users', brandFilter, roleFilter, concessaoFilter, 'REJECTED'],
+    queryFn: () =>
+      usersApi.list({
+        status: 'REJECTED',
+        ...(apiBrand && { brand: apiBrand }),
+        ...(apiRole && { role: apiRole }),
+        ...(apiConcessao && { concessaoId: apiConcessao }),
+      }).then(r => r.data as User[]),
+  });
+
   function hasAllBrands(u: User) {
     return u.role === 'ADMIN' || u.brands?.length === ALL_BRANDS.length;
   }
@@ -187,6 +198,9 @@ export default function UsersPage() {
   const pendingUsers = pendingRaw
     .filter(u => brandFilter !== 'all' || hasAllBrands(u));
   const inactiveUsers = inactiveRaw
+    .filter(u => brandFilter !== 'all' || hasAllBrands(u))
+    .filter(u => !roleFilter || u.role === roleFilter);
+  const rejectedUsers = rejectedRaw
     .filter(u => brandFilter !== 'all' || hasAllBrands(u))
     .filter(u => !roleFilter || u.role === roleFilter);
 
@@ -438,6 +452,16 @@ export default function UsersPage() {
         >
           Desativados ({inactiveUsers.length})
         </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === 'rejected'
+              ? 'border-red-500 text-red-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setTab('rejected')}
+        >
+          Rejeitados ({rejectedUsers.length})
+        </button>
       </div>
 
       {/* ATIVOS */}
@@ -649,6 +673,49 @@ export default function UsersPage() {
             </div>
             <div className="border-t border-gray-100 px-4 py-3 text-sm text-gray-500">
               <span className="font-medium text-gray-700">{inactiveUsers.length}</span> utilizador(es) desativado(s)
+            </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* REJEITADOS */}
+      {tab === 'rejected' && (
+        <div className="card">
+          {loadingRejected ? (
+            <div className="p-8 text-center text-gray-400">A carregar...</div>
+          ) : rejectedUsers.length === 0 ? (
+            <EmptyState message="Nenhum utilizador rejeitado." />
+          ) : (
+            <>
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>NIF</th>
+                    <th>Marcas</th>
+                    <th>Registado em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rejectedUsers.map(u => (
+                    <tr key={u.id} className="opacity-70">
+                      <td className="font-medium">{u.name}</td>
+                      <td className="text-gray-500 text-xs">{u.email}</td>
+                      <td className="text-gray-500">{u.nif || '—'}</td>
+                      <td>
+                        <span className="text-xs text-gray-500">{brandsLabel(u)}</span>
+                      </td>
+                      <td>{fmt(u.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t border-gray-100 px-4 py-3 text-sm text-gray-500">
+              <span className="font-medium text-gray-700">{rejectedUsers.length}</span> utilizador(es) rejeitado(s)
             </div>
             </>
           )}

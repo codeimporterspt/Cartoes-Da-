@@ -96,6 +96,7 @@ cartoes-da/
 - JWT payload contains `id`, `email`, `role`, `name`, `brands` (comma-separated slugs). No DB lookup per request.
 - Roles: `ADMIN` > `IMPORTADOR` > `VALIDADOR` > `USER`. `VALIDADOR` can only access prize validation.
 - `brands` on User is a CSV string (e.g. `"hyundai,genesis"`). IMPORTADOR users are filtered to their brands throughout the backend.
+- **IMPORTADOR list scoping**: the `GET /users` controller always re-reads the IMPORTADOR's brands from the DB (not the JWT) to avoid stale data, then scopes the result to those brands. The `hasPendingBrands=true` query similarly scopes to the IMPORTADOR's brand subset.
 - Passwords hashed with bcrypt (cost 10).
 
 ### Multi-brand theming
@@ -105,6 +106,8 @@ cartoes-da/
 
 ### Data model highlights
 - **User** has `brands` (active) and `pendingBrands` (requested, pre-approval), plus `concessaoIds` (CSV) and a primary `concessaoId`.
+- **User status lifecycle**: `PENDING → ACTIVE` (approve) or `REJECTED` (reject, clears `pendingBrands`); `ACTIVE → INACTIVE` (deactivate, sets `deactivatedAt`); both `INACTIVE` and `REJECTED` → `ACTIVE` via the same `reactivate` endpoint. Permanent removal uses `deletedAt` (soft-delete, user disappears from all lists) and also inactivates the user's cards.
+- NIF uniqueness check excludes `REJECTED` users — a new registration can reuse the NIF of a rejected account.
 - **Prize** lifecycle: `PENDENTE → VALIDADO → CARREGADO` (or `REJEITADO`/`ANULADO`). Prizes are marked `CARREGADO` when a topup import matches by `userId + status = VALIDADO` — the card's concessão is intentionally **not** part of the match.
 - **PrizeImport** records each Excel import with `importType` (`"prizes"` or `"prizes-aftersales"`) so the history table can distinguish them.
 - **CardBalanceHistory** tracks every balance movement. **CardLoadingHistory** is written specifically by the topup import and is the source of truth for the "last importador update" date on card exports.
@@ -136,6 +139,9 @@ The card declaration is an RTF file at `backend/static/declaracao_cartao_da.rtf`
 
 ### Number formatting
 All monetary values displayed in the UI must use `fmtMoney` from `frontend/src/utils/format.ts` (`value.toFixed(2).replace('.', ',')`). This produces Portuguese-style decimals (`250,00 €`). Never use raw `.toFixed(2)` in JSX.
+
+### UsersPage tabs
+`/utilizadores` has four tabs driven by separate queries: **Ativos** (`status=ACTIVE`), **Pendentes** (`hasPendingBrands=true`), **Desativados** (`status=INACTIVE`), **Rejeitados** (`status=REJECTED`). The Pendentes tab shows only users with brands awaiting approval (the `pendingBrands` CSV field); the Rejeitados tab uses the `reactivate` endpoint to restore a rejected user directly to ACTIVE.
 
 ### Auth store caveat
 `authStore` (Zustand, persisted to localStorage) holds the `user` object set at login time. This data can become stale across sessions. Do **not** rely on `user.name`, `user.nif`, or other profile fields from the store for display or pre-filling — call `authApi.me()` via `useQuery` to get fresh data from the DB when needed.
