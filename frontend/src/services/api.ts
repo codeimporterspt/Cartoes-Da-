@@ -135,6 +135,8 @@ export const cardLoadingApi = {
   list: (params?: Record<string, string>) => api.get('/card-loading', { params }),
   exportExcel: (params?: Record<string, string>) =>
     api.get('/card-loading/export', { params, responseType: 'blob' }),
+  updateOrigin: (id: string, originId: string | null) =>
+    api.patch(`/card-loading/${id}/origin`, { originId }),
 };
 
 export function downloadBlob(blob: Blob, filename: string) {
