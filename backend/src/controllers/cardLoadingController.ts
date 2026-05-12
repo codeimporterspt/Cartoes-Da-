@@ -10,7 +10,7 @@ export const cardLoadingController = {
     const history = await prisma.cardLoadingHistory.findMany({
       where: {
         ...(userId && { userId: String(userId) }),
-        ...(brand && { user: { concessao: { brand: String(brand) } } }),
+        ...(brand && { card: { concessao: { brand: String(brand) } } }),
         ...(originId && { originId: String(originId) }),
         ...(startDate || endDate ? {
           loadedAt: {
@@ -47,7 +47,7 @@ export const cardLoadingController = {
     const history = await prisma.cardLoadingHistory.findMany({
       where: {
         ...(userId && { userId: String(userId) }),
-        ...(brandConcessaoIds && { user: { concessaoId: { in: brandConcessaoIds } } }),
+        ...(brandConcessaoIds && { card: { concessaoId: { in: brandConcessaoIds } } }),
         ...(originId && { originId: String(originId) }),
         ...(startDate || endDate ? {
           loadedAt: {
@@ -70,7 +70,6 @@ export const cardLoadingController = {
       [
         { header: 'Utilizador',      key: 'user',          width: 30 },
         { header: 'Concessão',       key: 'concessao',     width: 25 },
-        { header: 'Origem',          key: 'origin',        width: 20 },
         { header: 'Login',           key: 'extranetLogin', width: 30 },
         { header: 'NIF',             key: 'nif',           width: 15 },
         { header: 'Nº Cartão',      key: 'cardNumber',    width: 20 },
@@ -81,7 +80,6 @@ export const cardLoadingController = {
       history.map(h => ({
         user:          h.user.name,
         concessao:     h.user.concessao?.name || '',
-        origin:        h.origin?.name || '',
         extranetLogin: h.extranetLogin || h.user.email,
         nif:           h.user.nif || '',
         cardNumber:    h.card.cardNumber,

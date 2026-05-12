@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { cardLoadingApi, usersApi, originsApi, downloadBlob } from '../../services/api';
+import { cardLoadingApi, usersApi, downloadBlob } from '../../services/api';
 import { fmtMoney } from '../../utils/format';
 import { useBrandStore } from '../../store/brandStore';
 import { CardLoadingHistory } from '../../types';
@@ -14,7 +14,7 @@ import { pt } from 'date-fns/locale';
 export default function CardLoadingHistoryPage() {
   const { brand } = useBrandStore();
   const [filters, setFilters] = useState({
-    userId: '', startDate: '', endDate: '', originId: '', search: '',
+    userId: '', startDate: '', endDate: '', search: '',
   });
 
   const { data: history = [], isLoading } = useQuery({
@@ -28,11 +28,6 @@ export default function CardLoadingHistoryPage() {
   const { data: users = [] } = useQuery({
     queryKey: ['users', brand.slug],
     queryFn: () => usersApi.list({ brand: brand.slug }).then(r => r.data),
-  });
-
-  const { data: origins = [] } = useQuery({
-    queryKey: ['origins'],
-    queryFn: () => originsApi.list().then(r => r.data),
   });
 
   async function handleExport() {
@@ -61,7 +56,7 @@ export default function CardLoadingHistoryPage() {
         }
       />
 
-      <FilterBar onReset={() => setFilters({ userId: '', startDate: '', endDate: '', originId: '', search: '' })}>
+      <FilterBar onReset={() => setFilters({ userId: '', startDate: '', endDate: '', search: '' })}>
         <FilterField label="Pesquisa">
           <input className="input" placeholder="Pesquisar..." value={filters.search}
             onChange={e => setFilters(f => ({ ...f, search: e.target.value }))} />
@@ -72,15 +67,6 @@ export default function CardLoadingHistoryPage() {
             <option value="">Todos</option>
             {(users as { id: string; name: string }[]).map(u => (
               <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-        </FilterField>
-        <FilterField label="Origem">
-          <select className="input" value={filters.originId}
-            onChange={e => setFilters(f => ({ ...f, originId: e.target.value }))}>
-            <option value="">Todas</option>
-            {(origins as { id: string; name: string }[]).map(o => (
-              <option key={o.id} value={o.id}>{o.name}</option>
             ))}
           </select>
         </FilterField>
@@ -107,7 +93,6 @@ export default function CardLoadingHistoryPage() {
                 <tr>
                   <th>Utilizador</th>
                   <th>Concessão</th>
-                  <th>Origem</th>
                   <th>Login</th>
                   <th>NIF</th>
                   <th>Nº Cartão</th>
@@ -121,7 +106,6 @@ export default function CardLoadingHistoryPage() {
                   <tr key={h.id}>
                     <td className="font-medium">{h.user.name}</td>
                     <td>{h.user.concessao?.name || '—'}</td>
-                    <td>{h.origin?.name || '—'}</td>
                     <td className="text-gray-500 text-xs">{h.extranetLogin || h.user.email}</td>
                     <td className="text-gray-500">{h.user.nif || '—'}</td>
                     <td className="font-mono text-sm">{h.card.cardNumber}</td>
