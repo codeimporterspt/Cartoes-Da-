@@ -6,4 +6,3 @@ export const cardLoadingRoutes = Router();
 
 cardLoadingRoutes.get('/', authenticate, requireElevated, cardLoadingController.list);
 cardLoadingRoutes.get('/export', authenticate, requireElevated, cardLoadingController.exportExcel);
-cardLoadingRoutes.patch('/:id/origin', authenticate, requireElevated, cardLoadingController.updateOrigin);

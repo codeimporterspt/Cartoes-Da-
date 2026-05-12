@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { cardLoadingApi, usersApi, originsApi, downloadBlob } from '../../services/api';
 import { fmtMoney } from '../../utils/format';
@@ -13,11 +13,9 @@ import { pt } from 'date-fns/locale';
 
 export default function CardLoadingHistoryPage() {
   const { brand } = useBrandStore();
-  const qc = useQueryClient();
   const [filters, setFilters] = useState({
     userId: '', startDate: '', endDate: '', originId: '', search: '',
   });
-  const [editingOriginId, setEditingOriginId] = useState<string | null>(null);
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['card-loading', brand.slug, filters],
@@ -35,17 +33,6 @@ export default function CardLoadingHistoryPage() {
   const { data: origins = [] } = useQuery({
     queryKey: ['origins'],
     queryFn: () => originsApi.list().then(r => r.data),
-  });
-
-  const updateOrigin = useMutation({
-    mutationFn: ({ id, originId }: { id: string; originId: string | null }) =>
-      cardLoadingApi.updateOrigin(id, originId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['card-loading'] });
-      setEditingOriginId(null);
-      toast.success('Origem atualizada');
-    },
-    onError: () => toast.error('Erro ao atualizar origem'),
   });
 
   async function handleExport() {
@@ -134,30 +121,7 @@ export default function CardLoadingHistoryPage() {
                   <tr key={h.id}>
                     <td className="font-medium">{h.user.name}</td>
                     <td>{h.user.concessao?.name || '—'}</td>
-                    <td>
-                      {editingOriginId === h.id ? (
-                        <select
-                          className="input input-sm py-0.5 text-xs"
-                          defaultValue={h.origin?.id ?? ''}
-                          autoFocus
-                          onBlur={e => updateOrigin.mutate({ id: h.id, originId: e.target.value || null })}
-                          onChange={e => updateOrigin.mutate({ id: h.id, originId: e.target.value || null })}
-                        >
-                          <option value="">— sem origem —</option>
-                          {(origins as { id: string; name: string }[]).map(o => (
-                            <option key={o.id} value={o.id}>{o.name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-brand-primary"
-                          title="Clique para editar"
-                          onClick={() => setEditingOriginId(h.id)}
-                        >
-                          {h.origin?.name || <span className="text-gray-300">—</span>}
-                        </span>
-                      )}
-                    </td>
+                    <td>{h.origin?.name || '—'}</td>
                     <td className="text-gray-500 text-xs">{h.extranetLogin || h.user.email}</td>
                     <td className="text-gray-500">{h.user.nif || '—'}</td>
                     <td className="font-mono text-sm">{h.card.cardNumber}</td>

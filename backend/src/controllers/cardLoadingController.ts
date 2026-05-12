@@ -4,25 +4,6 @@ import { AuthRequest } from '../types';
 import { exportToExcel } from '../utils/excel';
 
 export const cardLoadingController = {
-  async updateOrigin(req: AuthRequest, res: Response): Promise<void> {
-    const { id } = req.params;
-    const { originId } = req.body;
-
-    const record = await prisma.cardLoadingHistory.findUnique({ where: { id } });
-    if (!record) {
-      res.status(404).json({ message: 'Registo não encontrado' });
-      return;
-    }
-
-    const updated = await prisma.cardLoadingHistory.update({
-      where: { id },
-      data: { originId: originId || null },
-      include: { user: { include: { concessao: true } }, card: { select: { cardNumber: true } }, origin: true },
-    });
-
-    res.json(updated);
-  },
-
   async list(req: AuthRequest, res: Response): Promise<void> {
     const { userId, startDate, endDate, originId, search, brand } = req.query;
 
