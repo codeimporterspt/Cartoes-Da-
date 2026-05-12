@@ -137,6 +137,7 @@ export const importController = {
     const errors: string[] = [];
     let updatedCount = 0;
 
+    const allOrigins = await prisma.origin.findMany();
     const rows: { nif: string; seriesNumber: string; cardNumber: string; amount: number; originName: string }[] = [];
 
     worksheet.eachRow((row, rowIndex) => {
@@ -151,13 +152,14 @@ export const importController = {
       if (!nif)        errors.push(`Linha ${rowIndex}: NIF em falta`);
       if (!cardNumber) errors.push(`Linha ${rowIndex}: Número do cartão em falta`);
       if (!amount || isNaN(amount)) errors.push(`Linha ${rowIndex}: Valor inválido`);
+      if (!originName) errors.push(`Linha ${rowIndex}: Origem em falta`);
+      else if (!allOrigins.find(o => o.name.toLowerCase() === originName.toLowerCase()))
+        errors.push(`Linha ${rowIndex}: Origem "${originName}" não encontrada`);
 
-      if (nif && cardNumber && amount) {
+      if (nif && cardNumber && amount && originName) {
         rows.push({ nif, seriesNumber, cardNumber, amount, originName });
       }
     });
-
-    const allOrigins = await prisma.origin.findMany();
 
     for (const row of rows) {
       const card = await prisma.card.findFirst({
