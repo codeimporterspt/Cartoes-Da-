@@ -370,7 +370,7 @@ export const cardController = {
           { header: 'Utilizador',               key: 'utilizador',         width: 30 },
           { header: 'Email',                     key: 'email',              width: 30 },
           { header: 'NIF',                       key: 'nif',                width: 15 },
-          { header: 'Cód. Dealer',               key: 'dealerCode',         width: 15 },
+          { header: 'Dealer Code',               key: 'dealerCode',         width: 15 },
           { header: 'Concessão',                 key: 'concessao',          width: 25 },
           { header: 'Nº Cartão',                key: 'cardNumber',         width: 20 },
           { header: 'Nº Série',                 key: 'seriesNumber',       width: 18 },

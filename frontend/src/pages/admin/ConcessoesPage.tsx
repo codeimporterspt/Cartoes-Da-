@@ -98,7 +98,7 @@ export default function ConcessoesPage() {
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200 w-10">#</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">Nome</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">Código Dealer</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">Dealer Code</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200 w-20"></th>
                 </tr>
               </thead>
@@ -152,7 +152,7 @@ export default function ConcessoesPage() {
                 />
               </div>
               <div>
-                <label className="label">Código Dealer *</label>
+                <label className="label">Dealer Code *</label>
                 <input
                   className="input"
                   value={form.dealerCode}

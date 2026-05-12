@@ -107,7 +107,7 @@ export default function CardBalancePage() {
                   <th>Utilizador</th>
                   <th>Email</th>
                   <th>NIF</th>
-                  <th>Cód. Dealer</th>
+                  <th>Dealer Code</th>
                   <th>Concessão</th>
                   <th>Nº Cartão</th>
                   <th>Nº Série</th>
