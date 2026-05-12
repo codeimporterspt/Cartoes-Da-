@@ -14,7 +14,7 @@ function saveLastFile(type: string, filePath: string) {
   } catch { /* non-critical */ }
 }
 
-type PrizeRow = { originSeqId: string; dealerCode: string; nif: string; value: number };
+type PrizeRow = { originName: string; dealerCode: string; nif: string; value: number };
 
 async function processPrizeImport(
   req: AuthRequest,
@@ -47,7 +47,7 @@ async function processPrizeImport(
 
   const now = new Date();
   const autoPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const allOrigins = await prisma.origin.findMany({ orderBy: { area: 'asc' } });
+  const allOrigins = await prisma.origin.findMany();
   let importedCount = 0;
 
   for (const item of prizeData) {
@@ -56,11 +56,9 @@ async function processPrizeImport(
     const user = await prisma.user.findFirst({ where: { nif: item.nif, deletedAt: null } });
     if (!user) continue;
 
-    let origin = null;
-    if (item.originSeqId) {
-      const seqId = parseInt(item.originSeqId, 10);
-      if (!isNaN(seqId) && seqId >= 1 && seqId <= allOrigins.length) origin = allOrigins[seqId - 1];
-    }
+    const origin = item.originName
+      ? allOrigins.find(o => o.name.toLowerCase() === item.originName.toLowerCase()) ?? null
+      : null;
 
     await prisma.prize.create({
       data: {
@@ -89,7 +87,7 @@ export const importController = {
       const errors: string[] = [];
       worksheet.eachRow((row, rowIndex) => {
         if (rowIndex === 1) return;
-        const originSeqId = String(row.getCell(1).value || '').trim();
+        const originName  = String(row.getCell(1).value || '').trim();
         // col 2 (VIN) and col 3 (Matrícula) — informational, not stored
         const dealerCode  = String(row.getCell(4).value || '').trim();
         const nif         = String(row.getCell(5).value || '').trim();
@@ -97,7 +95,7 @@ export const importController = {
         if (!dealerCode) errors.push(`Linha ${rowIndex}: Dealer Code em falta`);
         if (!nif)        errors.push(`Linha ${rowIndex}: NIF em falta`);
         if (!value || isNaN(value)) errors.push(`Linha ${rowIndex}: Valor inválido`);
-        if (dealerCode && nif && value) rows.push({ originSeqId, dealerCode, nif, value });
+        if (dealerCode && nif && value) rows.push({ originName, dealerCode, nif, value });
       });
       return { rows, errors };
     });
@@ -109,7 +107,7 @@ export const importController = {
       const errors: string[] = [];
       worksheet.eachRow((row, rowIndex) => {
         if (rowIndex === 1) return;
-        const originSeqId = String(row.getCell(1).value || '').trim();
+        const originName  = String(row.getCell(1).value || '').trim();
         // col 2 (Matrícula) — informational, not stored
         const dealerCode  = String(row.getCell(3).value || '').trim();
         const nif         = String(row.getCell(4).value || '').trim();
@@ -118,7 +116,7 @@ export const importController = {
         if (!dealerCode) errors.push(`Linha ${rowIndex}: Dealer Code em falta`);
         if (!nif)        errors.push(`Linha ${rowIndex}: NIF em falta`);
         if (!value || isNaN(value)) errors.push(`Linha ${rowIndex}: Valor inválido`);
-        if (dealerCode && nif && value) rows.push({ originSeqId, dealerCode, nif, value });
+        if (dealerCode && nif && value) rows.push({ originName, dealerCode, nif, value });
       });
       return { rows, errors };
     });
@@ -338,21 +336,21 @@ export const importController = {
   async downloadTemplate(req: AuthRequest, res: Response): Promise<void> {
     const { type } = req.params;
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Template');
-
-    const templates: Record<string, { headers: string[]; sample: (string | number)[] }> = {
+    const templates: Record<string, { headers: string[]; sample: (string | number)[]; originCol?: string }> = {
       prizes: {
-        headers: ['ID', 'VIN', 'Matrícula', 'Dealer Code', 'NIF', 'Valor', 'Modelo'],
-        sample: [1, 'WVWZZZ1KZ8W123456', 'AA-00-AA', 'HYD001', '123456789', 250.00, 'Tucson'],
+        headers: ['Origem', 'VIN', 'Matrícula', 'Dealer Code', 'NIF', 'Valor', 'Modelo'],
+        sample: ['VN', 'WVWZZZ1KZ8W123456', 'AA-00-AA', 'HYD001', '123456789', 250.00, 'Tucson'],
+        originCol: 'A',
       },
       'prizes-aftersales': {
-        headers: ['ID', 'Matrícula', 'Dealer Code', 'NIF', 'Valor', 'Modelo'],
-        sample: [1, 'AA-00-AA', 'HYD001', '123456789', 250.00, 'Tucson'],
+        headers: ['Origem', 'Matrícula', 'Dealer Code', 'NIF', 'Valor', 'Modelo'],
+        sample: ['VN', 'AA-00-AA', 'HYD001', '123456789', 250.00, 'Tucson'],
+        originCol: 'A',
       },
       topup: {
         headers: ['NIF', 'Número de série', 'Número do cartão', 'Valor', 'Origem'],
         sample: ['123456789', 'SER001', '1234567890123456', 100.00, 'VN'],
+        originCol: 'E',
       },
       origins: {
         headers: ['ID', 'Área', 'Origem', 'Estado', 'Matrícula', 'Modelo'],
@@ -370,13 +368,15 @@ export const importController = {
       return;
     }
 
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Template');
+
     worksheet.columns = template.headers.map((h, i) => ({
       header: h,
       key: `col${i}`,
       width: 25,
     }));
 
-    worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
       type: 'pattern',
       pattern: 'solid',
@@ -384,6 +384,22 @@ export const importController = {
     };
     worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     worksheet.addRow(template.sample);
+
+    if (template.originCol) {
+      const origins = await prisma.origin.findMany({ orderBy: { name: 'asc' } });
+      if (origins.length > 0) {
+        const originsSheet = workbook.addWorksheet('_Origens', { state: 'veryHidden' });
+        origins.forEach((o, i) => { originsSheet.getCell(i + 1, 1).value = o.name; });
+        worksheet.dataValidations.add(`${template.originCol}2:${template.originCol}10000`, {
+          type: 'list',
+          allowBlank: false,
+          formulae: [`_Origens!$A$1:$A$${origins.length}`],
+          showErrorMessage: true,
+          errorTitle: 'Origem inválida',
+          error: 'Selecione uma origem da lista.',
+        });
+      }
+    }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="template_${type}.xlsx"`);
