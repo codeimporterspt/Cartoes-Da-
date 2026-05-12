@@ -133,13 +133,13 @@ Use `isAdmin` to guard ADMIN-only UI; use `isElevated` for ADMIN + IMPORTADOR UI
 ### Import column mappings (Excel)
 | Import type | Col1 | Col2 | Col3 | Col4 | Col5 | Col6 |
 |---|---|---|---|---|---|---|
-| prizes (vendas) | ID (Origin seqId) | VIN | Matrícula | Dealer Code | NIF | Valor |
-| prizes-aftersales | ID (Origin seqId) | Matrícula | Dealer Code | NIF | Valor | Modelo |
-| topup | NIF | Série | Nº Cartão | Valor | — | — |
+| prizes (vendas) | Origem (name) | VIN | Matrícula | Dealer Code | NIF | Valor |
+| prizes-aftersales | Origem (name) | Matrícula | Dealer Code | NIF | Valor | Modelo |
+| topup | NIF | Série | Nº Cartão | Valor | Origem (name, **required**) | — |
 | origins | ID (display) | Área | Origem | Estado | Matrícula | Modelo |
 | concessoes | Nome | Dealer Code | — | — | — | — |
 
-Origin seqId in prize imports is a 1-based index into `prisma.origin.findMany({ orderBy: { area: 'asc' } })`.
+Origin is matched case-insensitively by `Origin.name`. Templates with an Origem column include a dropdown (via a hidden `_Origens` sheet) populated from the DB at generation time.
 
 ### Frontend data fetching
 - All server state via **TanStack Query v5**. Query keys follow the pattern `['resource', filters...]`.
