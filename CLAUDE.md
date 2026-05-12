@@ -46,7 +46,7 @@ PORT=3001
 # SMTP fields are optional locally — emails are fire-and-forget
 ```
 
-`frontend/.env` is not needed locally — Vite proxies `/api` and `/uploads` to `:3001` via `vite.config.ts`. `VITE_API_URL` in `frontend/.env.example` is unused.
+`frontend/.env` is not needed locally — Vite proxies `/api` and `/uploads` to `:3001` via `vite.config.ts`.
 
 ### Seed credentials
 | Role | Email | Password |
@@ -74,7 +74,7 @@ cartoes-da/
     └── src/
         ├── pages/
         │   ├── admin/     backoffice pages (ADMIN/IMPORTADOR)
-        │   └── user/      PrizesPage, CardsPage (USER)
+        │   └── user/      PrizesPage, CardsPage (USER + ADMIN + IMPORTADOR)
         ├── components/
         │   ├── layout/    Layout.tsx (sidebar shell), UsersLayout.tsx
         │   └── ui/        shared components (Modal, StatusBadge, PageHeader…)
@@ -86,18 +86,35 @@ cartoes-da/
         └── BrandSelector.tsx  landing page after login
 ```
 
+> `FLOWS.md` in the repo root is a detailed UI/screen specification for every page and modal. Consult it when working on visual layout or user flows.
+
 ### Request flow
 1. Frontend `api.ts` interceptor attaches `Authorization: Bearer <token>` to every request.
 2. Backend `authenticate` middleware decodes the JWT and populates `req.user` (id, email, role, brands).
-3. Route-level middleware (`requireAdmin`, `requireElevated`, `requireAdminOrImportador`, `requireValidation`) block by role before the controller runs.
+3. Route-level middleware blocks by role before the controller runs.
 4. Controllers do additional ownership checks for USER-level access (e.g. a USER can only modify their own cards).
 
 ### Auth & roles
 - JWT payload contains `id`, `email`, `role`, `name`, `brands` (comma-separated slugs). No DB lookup per request.
-- Roles: `ADMIN` > `IMPORTADOR` > `VALIDADOR` > `USER`. `VALIDADOR` can only access prize validation.
+- Roles: `ADMIN` > `IMPORTADOR` > `VALIDADOR` > `USER`.
 - `brands` on User is a CSV string (e.g. `"hyundai,genesis"`). IMPORTADOR users are filtered to their brands throughout the backend.
-- **IMPORTADOR list scoping**: the `GET /users` controller always re-reads the IMPORTADOR's brands from the DB (not the JWT) to avoid stale data, then scopes the result to those brands. The `hasPendingBrands=true` query similarly scopes to the IMPORTADOR's brand subset.
+- **IMPORTADOR list scoping**: the `GET /users` controller always re-reads the IMPORTADOR's brands from the DB (not the JWT) to avoid stale data, then scopes the result to those brands.
 - Passwords hashed with bcrypt (cost 10).
+
+### Backend middleware role map (`src/middleware/auth.ts`)
+| Middleware | Roles allowed |
+|---|---|
+| `requireAdmin` | ADMIN |
+| `requireAdminOrImportador` | ADMIN, IMPORTADOR |
+| `requireElevated` | ADMIN, IMPORTADOR, VALIDADOR |
+| `requireValidation` | ADMIN, VALIDADOR |
+
+### Frontend role flags (`CardsPage`, `PrizesPage`, etc.)
+```ts
+const isAdmin    = user?.role === 'ADMIN';
+const isElevated = isAdmin || user?.role === 'IMPORTADOR';
+```
+Use `isAdmin` to guard ADMIN-only UI; use `isElevated` for ADMIN + IMPORTADOR UI (e.g. the Transferir button, backoffice filters).
 
 ### Multi-brand theming
 - After login, the user picks a brand from `BrandSelector`. This writes a `BrandConfig` to `brandStore` (Zustand, persisted to localStorage).
@@ -105,7 +122,7 @@ cartoes-da/
 - `brandStore.brand.slug` is passed as a query param to most API calls so the backend can filter by brand.
 
 ### Data model highlights
-- **User** has `brands` (active) and `pendingBrands` (requested, pre-approval), plus `concessaoIds` (CSV) and a primary `concessaoId`.
+- **User** has `brands` (active) and `pendingBrands` (requested, pre-approval), plus `concessaoIds` (CSV of all concessões) and a primary `concessaoId` (FK to the main one).
 - **User status lifecycle**: `PENDING → ACTIVE` (approve) or `REJECTED` (reject, clears `pendingBrands`); `ACTIVE → INACTIVE` (deactivate, sets `deactivatedAt`); both `INACTIVE` and `REJECTED` → `ACTIVE` via the same `reactivate` endpoint. Permanent removal uses `deletedAt` (soft-delete, user disappears from all lists) and also inactivates the user's cards.
 - NIF uniqueness check excludes `REJECTED` users — a new registration can reuse the NIF of a rejected account.
 - **Prize** lifecycle: `PENDENTE → VALIDADO → CARREGADO` (or `REJEITADO`/`ANULADO`). Prizes are marked `CARREGADO` when a topup import matches by `userId + status = VALIDADO` — the card's concessão is intentionally **not** part of the match.
@@ -135,7 +152,7 @@ Origin seqId in prize imports is a 1-based index into `prisma.origin.findMany({ 
 - The `downloadLastFile` allowed types are: `prizes`, `prizes-aftersales`, `topup`, `origins`, `concessoes`. The frontend must pass the **template key** (kebab-case), not the ImportType id (camelCase).
 
 ### Declaration template generation
-The card declaration is an RTF file at `backend/static/declaracao_cartao_da.rtf`. When the user clicks "Download template declaração" in the card creation modal, a form modal opens with four empty fields (name, NIF, card number, series number). On confirm, the frontend fetches the RTF via `api.get('/cards/declaration-template', { responseType: 'text' })`, replaces the underscore placeholders using regex, injects today's date, creates a `Blob`, and triggers a client-side download — no additional backend endpoint is involved. Placeholder patterns matched: `___/___/______` (date), `Eu, _+,` (name), `NIF n\.º _+,` (NIF), `Número do Cartão: _+` (card number), `Número de Série: _+` (series number).
+The card declaration is an RTF file at `backend/static/declaracao_cartao_da.rtf`. When the user clicks "Download template declaração", a form modal collects four fields (name, NIF, card number, series number). On confirm, the frontend fetches the RTF via `api.get('/cards/declaration-template', { responseType: 'text' })`, replaces the underscore placeholders using regex, injects today's date, creates a `Blob`, and triggers a client-side download — no additional backend endpoint is involved. Placeholder patterns matched: `___/___/______` (date), `Eu, _+,` (name), `NIF n\.º _+,` (NIF), `Número do Cartão: _+` (card number), `Número de Série: _+` (series number).
 
 ### Number formatting
 All monetary values displayed in the UI must use `fmtMoney` from `frontend/src/utils/format.ts` (`value.toFixed(2).replace('.', ',')`). This produces Portuguese-style decimals (`250,00 €`). Never use raw `.toFixed(2)` in JSX.

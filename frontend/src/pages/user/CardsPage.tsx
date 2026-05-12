@@ -64,7 +64,7 @@ export default function CardsPage() {
   const { data: users = [] } = useQuery({
     queryKey: ['users', brand.slug],
     queryFn: () => usersApi.list({ brand: brand.slug }).then(r => r.data),
-    enabled: isAdmin,
+    enabled: isElevated,
   });
 
   const availableConcessoes: Concessao[] = isElevated
@@ -320,7 +320,7 @@ export default function CardsPage() {
                       Reativar
                     </button>
                   )}
-                  {isAdmin && (
+                  {isElevated && (
                     <button
                       className="btn-secondary btn btn-sm"
                       onClick={() => setTransferCard(selectedCard)}
@@ -442,7 +442,7 @@ export default function CardsPage() {
                             Reativar
                           </button>
                         )}
-                        {isAdmin && (
+                        {isElevated && (
                           <button
                             className="btn-secondary btn btn-sm"
                             onClick={() => setTransferCard(card)}
