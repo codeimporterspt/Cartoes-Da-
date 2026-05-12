@@ -137,7 +137,7 @@ export const importController = {
     const errors: string[] = [];
     let updatedCount = 0;
 
-    const rows: { nif: string; seriesNumber: string; cardNumber: string; amount: number }[] = [];
+    const rows: { nif: string; seriesNumber: string; cardNumber: string; amount: number; originName: string }[] = [];
 
     worksheet.eachRow((row, rowIndex) => {
       if (rowIndex === 1) return;
@@ -146,15 +146,18 @@ export const importController = {
       const seriesNumber = String(row.getCell(2).value || '').trim();
       const cardNumber   = String(row.getCell(3).value || '').trim();
       const amount       = parseFloat(String(row.getCell(4).value || '0'));
+      const originName   = String(row.getCell(5).value || '').trim();
 
       if (!nif)        errors.push(`Linha ${rowIndex}: NIF em falta`);
       if (!cardNumber) errors.push(`Linha ${rowIndex}: Número do cartão em falta`);
       if (!amount || isNaN(amount)) errors.push(`Linha ${rowIndex}: Valor inválido`);
 
       if (nif && cardNumber && amount) {
-        rows.push({ nif, seriesNumber, cardNumber, amount });
+        rows.push({ nif, seriesNumber, cardNumber, amount, originName });
       }
     });
+
+    const allOrigins = await prisma.origin.findMany();
 
     for (const row of rows) {
       const card = await prisma.card.findFirst({
@@ -171,6 +174,10 @@ export const importController = {
         errors.push(`Cartão ${row.cardNumber}: não encontrado, inativo ou NIF/série não corresponde`);
         continue;
       }
+
+      const origin = row.originName
+        ? allOrigins.find(o => o.name.toLowerCase() === row.originName.toLowerCase()) ?? null
+        : null;
 
       const newBalance = Number(card.balance) + row.amount;
       const paymentDate = new Date();
@@ -190,7 +197,7 @@ export const importController = {
           data: {
             cardId: card.id,
             userId: card.userId,
-            originId: undefined,
+            originId: origin?.id ?? null,
             movementValue: row.amount,
             balanceValue: newBalance,
             loadedById: req.user!.id,
@@ -342,8 +349,8 @@ export const importController = {
         sample: [1, 'AA-00-AA', 'HYD001', '123456789', 250.00, 'Tucson'],
       },
       topup: {
-        headers: ['NIF', 'Número de série', 'Número do cartão', 'Valor'],
-        sample: ['123456789', 'SER001', '1234567890123456', 100.00],
+        headers: ['NIF', 'Número de série', 'Número do cartão', 'Valor', 'Origem'],
+        sample: ['123456789', 'SER001', '1234567890123456', 100.00, 'VN'],
       },
       origins: {
         headers: ['ID', 'Área', 'Origem', 'Estado', 'Matrícula', 'Modelo'],
