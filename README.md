@@ -1,24 +1,25 @@
-# Cartões Dá — Hyundai Portugal Extranet
+# Cartões Dá — Caetano Automotive Portugal
 
-Internal platform for managing employee reward cards (Cartão Dá) and prize/bonus workflows.
+Internal platform for managing employee reward cards (Cartão Dá) and prize/bonus workflows across multiple brands.
 
 ## Tech Stack
 
-- **Frontend**: React + TypeScript + Tailwind CSS + Vite
+- **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL + Prisma ORM
-- **Auth**: JWT with role-based access (ADMIN / USER)
+- **Database**: SQLite (dev) / PostgreSQL (prod) via Prisma ORM
+- **Auth**: JWT with role-based access (ADMIN / IMPORTADOR / VALIDADOR / USER)
 - **Files**: ExcelJS (import/export), Multer (uploads)
-- **Email**: Nodemailer
-- **Scheduler**: node-cron (monthly reminder)
+- **Email**: Nodemailer (fire-and-forget)
+- **Scheduler**: node-cron (monthly reminder, 1st of month 09:00)
 
 ---
 
 ## Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+
-- npm or yarn
+- npm
+
+> No database server needed for local dev — Prisma uses SQLite (`backend/prisma/dev.db`).
 
 ---
 
@@ -27,139 +28,162 @@ Internal platform for managing employee reward cards (Cartão Dá) and prize/bon
 ### 1. Clone and install
 
 ```bash
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
+npm run install:all   # installs backend + frontend dependencies
 ```
 
-### 2. Database
+### 2. Environment variables
 
-Create a PostgreSQL database:
-
-```sql
-CREATE DATABASE cartoes_da;
-```
-
-### 3. Environment variables
-
-**Backend** — copy `backend/.env.example` to `backend/.env` and fill in:
+Copy `backend/.env.example` to `backend/.env`. For local dev:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/cartoes_da"
-JWT_SECRET="change-this-to-a-long-random-string"
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-app-password"
-FINANCE_EMAIL="finance@hyundai.pt"
-FRONTEND_URL="http://localhost:5173"
+DATABASE_URL="file:./prisma/dev.db"
+JWT_SECRET="any-local-secret"
+PORT=3001
+# SMTP fields are optional — emails are fire-and-forget and won't break the app if absent
 ```
 
-### 4. Run Prisma migrations and seed
+### 3. Database and seed
 
 ```bash
 cd backend
-npx prisma migrate dev --name init
-npm run prisma:seed
+npx prisma db push       # create/update SQLite schema
+npm run prisma:seed      # seed brands, concessões, origins, and one USER per brand
 ```
 
-### 5. Start the servers
+### 4. Start servers
 
 ```bash
-# Terminal 1 — Backend
-cd backend
-npm run dev
-
-# Terminal 2 — Frontend
-cd frontend
-npm run dev
+# from repo root
+npm run dev:backend      # :3001
+npm run dev:frontend     # :5173  (proxies /api and /uploads → :3001)
 ```
-
-Open http://localhost:5173
 
 ---
 
-## Default Credentials (seed data)
+## Seed credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@hyundai.pt | password123 |
-| User | joao.silva@hyundai.pt | password123 |
-| User | maria.santos@hyundai.pt | password123 |
+| ADMIN | admin@cartoes-da.pt | password123 |
+| USER (per brand) | utilizador@{brand-slug}.pt | password123 |
+
+Brand slugs: `byd` `dongfeng` `farizon` `geely` `honda` `hyundai` `nissan` `xpeng` `zeekr`
+
+IMPORTADOR and VALIDADOR accounts are not seeded — create them via the admin UI or Prisma Studio (`npx prisma studio`).
 
 ---
 
-## Modules
+## Roles & modules
 
-### Standard User
-| Module | Description |
+### USER
+| Module | Capabilities |
 |--------|-------------|
-| Prémios | View own prizes with filters (year, month, concessão) and Excel export |
-| Consulta Cartões | View own cards, create new card with declaration upload, view balance history |
+| Prémios `/premios` | View own prizes; filter by year/month/concessão/origem; Excel export |
+| Consulta Cartões `/cartoes` | View own cards; create card (with declaration upload); inactivate/reactivate own card; view balance history; download filled RTF declaration |
 
-### Admin (BackOffice)
-| Module | Description |
+### IMPORTADOR
+All USER capabilities plus:
+| Module | Capabilities |
 |--------|-------------|
-| Validação Prémios | Approve / Reject / Annul pending prizes in bulk with email notifications |
-| Saldo Cartão | Full card list with dealer code, NIF, balance — Excel export |
-| Origens | Manage prize origin types — CRUD + Excel export |
-| Cartões | All card requests, validate/reject declarations |
-| Importações | Import prizes, card top-ups, origins via Excel with template download |
-| Histórico Carregamentos | Full loading history with origem, extranet login, movement + balance values |
-| Utilizadores | Full user CRUD with password reset; delete auto-inactivates cards |
+| Consulta Cartões | Transfer card to another user; inactivate/reactivate own card |
+| Validação Prémios `/backoffice/validacao` | View pending prizes; annul prizes (sets status ANULADO) |
+| Saldo Cartão `/backoffice/saldo-cartao` | Full card list with balance; Excel export |
+| Origens `/backoffice/origens` | Manage prize origin types (CRUD + Excel export) |
+| Cartões `/backoffice/cartoes` | Approve/reject card declarations |
+| Importações `/backoffice/importacoes` | Import prizes, aftersales prizes, card top-ups, origins, concessões via Excel; download templates and last uploaded file |
+| Histórico de Carregamentos `/backoffice/historico` | Full top-up loading history |
+| Concessões `/backoffice/concessoes` | Manage concessões |
+
+### VALIDADOR
+| Module | Capabilities |
+|--------|-------------|
+| Validação Prémios | Validate/reject pending prizes (individual + bulk); annul prizes |
+
+### ADMIN
+All of the above, plus:
+| Module | Capabilities |
+|--------|-------------|
+| Consulta Cartões | Transfer any card; inactivate/reactivate any card |
+| Gestão de Utilizadores `/utilizadores` | Full user CRUD; approve/reject registrations; reset password; deactivate/reactivate accounts (deactivation also inactivates the user's cards) |
 
 ---
 
-## API Endpoints
+## Multi-brand
+
+After login the user selects a brand from a picker (`/driveevents`). The selected brand slug is stored in Zustand + localStorage and sent as a query param on every API call, so the backend scopes all results to that brand. Sidebar colours update via CSS variables (`--brand-primary`, `--brand-light`) injected by `useBrandTheme`.
+
+---
+
+## API endpoints
 
 ### Auth
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `PUT /api/auth/change-password`
+| Method | Path |
+|--------|------|
+| POST | `/api/auth/login` |
+| GET | `/api/auth/me` |
+| PUT | `/api/auth/change-password` |
 
-### Users (admin only except GET own)
-- `GET /api/users`
-- `POST /api/users`
-- `PUT /api/users/:id`
-- `DELETE /api/users/:id`
-- `PUT /api/users/:id/reset-password`
+### Users
+| Method | Path | Guard |
+|--------|------|-------|
+| GET | `/api/users` | elevated |
+| GET | `/api/users/:id` | authenticated |
+| POST | `/api/users` | elevated |
+| PUT | `/api/users/:id` | elevated |
+| DELETE | `/api/users/:id` | elevated |
+| PUT | `/api/users/:id/reset-password` | elevated |
+| PUT | `/api/users/:id/approve` | elevated |
+| PUT | `/api/users/:id/reject` | elevated |
+| PUT | `/api/users/:id/deactivate` | elevated |
+| PUT | `/api/users/:id/reactivate` | elevated |
 
 ### Cards
-- `GET /api/cards` — filtered list
-- `POST /api/cards` — create with declaration upload
-- `PUT /api/cards/:id/validate` — admin: approve/reject
-- `PUT /api/cards/:id/balance` — admin: update balance
-- `PUT /api/cards/:id/inactivate`
-- `PUT /api/cards/:id/reactivate` — admin
-- `PUT /api/cards/:id/transfer` — admin
-- `GET /api/cards/export` — Excel download
+| Method | Path | Guard |
+|--------|------|-------|
+| GET | `/api/cards` | authenticated |
+| GET | `/api/cards/export` | authenticated |
+| GET | `/api/cards/declaration-template` | authenticated |
+| GET | `/api/cards/:id` | authenticated |
+| POST | `/api/cards` | authenticated + multipart |
+| PUT | `/api/cards/:id/validate` | elevated |
+| PUT | `/api/cards/:id/balance` | authenticated (owner or elevated) |
+| PUT | `/api/cards/:id/inactivate` | authenticated (owner or elevated) |
+| PUT | `/api/cards/:id/reactivate` | authenticated (owner or elevated) |
+| PUT | `/api/cards/:id/transfer` | elevated |
 
 ### Prizes
-- `GET /api/prizes`
-- `GET /api/prizes/pending`
-- `POST /api/prizes/approve`
-- `POST /api/prizes/reject`
-- `POST /api/prizes/annul`
-- `GET /api/prizes/export`
+| Method | Path | Guard |
+|--------|------|-------|
+| GET | `/api/prizes` | authenticated |
+| GET | `/api/prizes/export` | authenticated |
+| GET | `/api/prizes/pending` | elevated |
+| POST | `/api/prizes/approve` | admin+validador |
+| POST | `/api/prizes/reject` | admin+validador |
+| PUT | `/api/prizes/:id/annul` | elevated |
+| DELETE | `/api/prizes/:id` | elevated (PENDENTE only) |
 
 ### Imports
-- `GET /api/imports/template/:type` — download template (prizes|topup|origins)
-- `POST /api/imports/prizes`
-- `POST /api/imports/topup`
-- `POST /api/imports/origins`
+| Method | Path |
+|--------|------|
+| GET | `/api/imports` — import history |
+| GET | `/api/imports/template/:type` — download blank template |
+| GET | `/api/imports/last-file/:type` — download last uploaded file |
+| POST | `/api/imports/prizes` |
+| POST | `/api/imports/prizes-aftersales` |
+| POST | `/api/imports/topup` |
+| POST | `/api/imports/origins` |
+| POST | `/api/imports/concessoes` |
 
-### Origins / Concessões / Card Loading
-- Standard CRUD and export endpoints
+All import POSTs require `elevated` and `multipart/form-data` with a `file` field.
+
+### Origins / Concessões / Card loading history
+Standard GET (list + export) and CRUD endpoints under `/api/origins`, `/api/concessoes`, `/api/card-loading`.
 
 ---
 
-## Email Triggers
+## Email triggers
 
-1. New card declaration → Finance team
+1. Card declaration submitted → Finance team
 2. Card approved → Card holder
 3. Card rejected → Card holder (with reason)
 4. Prize import success → Importer
@@ -171,10 +195,10 @@ Open http://localhost:5173
 
 ---
 
-## Production Notes
+## Production
 
-- Set `NODE_ENV=production` to reduce DB query logging
-- Use a reverse proxy (nginx) to serve frontend build and proxy API
-- Configure SMTP with a transactional email service (SendGrid, Mailgun, etc.)
-- Set strong `JWT_SECRET` — minimum 32 random characters
-- Configure file upload limits and storage path in `.env`
+- Replace `DATABASE_URL` with a PostgreSQL connection string; run `npx prisma migrate deploy`
+- Set a strong `JWT_SECRET` (32+ random chars)
+- Set `NODE_ENV=production`
+- Serve the frontend build via nginx and proxy `/api` and `/uploads` to the Express process
+- Configure SMTP with a transactional provider (SendGrid, Mailgun, etc.)
