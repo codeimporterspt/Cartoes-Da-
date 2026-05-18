@@ -29,10 +29,11 @@ npm run prisma:seed                # seed initial data
 
 > `prisma generate` (regenerates the TS client) cannot run while the backend process has the native DLL locked. Restart the backend after schema changes to pick up new fields.
 
-### Build & Lint
+### Build & type-check
 ```bash
-cd frontend && npm run lint         # ESLint on .ts/.tsx
+cd frontend && npx tsc --noEmit    # type-check (npm run lint has no ESLint config file — skip it)
 cd frontend && npm run build        # tsc + vite build
+cd backend  && npx tsc --noEmit    # type-check (one pre-existing error in importController.ts — ignore it)
 cd backend  && npm run build        # tsc → dist/
 ```
 
@@ -116,6 +117,12 @@ const isAdmin    = user?.role === 'ADMIN';
 const isElevated = isAdmin || user?.role === 'IMPORTADOR';
 ```
 Use `isAdmin` to guard ADMIN-only UI; use `isElevated` for ADMIN + IMPORTADOR UI (e.g. the Transferir button, backoffice filters).
+
+`ValidationPage` uses two separate flags instead of the generic helpers, because the two actions have different role sets:
+```ts
+const canValidate = user?.role === 'ADMIN' || user?.role === 'VALIDADOR';          // Validar / Rejeitar
+const canAnnul    = user?.role === 'ADMIN' || user?.role === 'IMPORTADOR' || user?.role === 'VALIDADOR'; // Anular
+```
 
 ### CardsPage ownership model
 `myCards` (used in the "Gestão do Cartão" management panel) = all cards for ADMIN, own cards only for everyone else:
