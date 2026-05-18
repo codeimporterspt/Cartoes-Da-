@@ -1021,7 +1021,7 @@ Formulário ──► submete ──► estado PENDING (pendingBrands)
 | Transferir cartão | — | — | ✓ | ✓ |
 | Validar prémios | — | ✓ | — | ✓ |
 | Rejeitar prémios | — | ✓ | — | ✓ |
-| Anular prémios | — | — | ✓ | ✓ |
+| Anular prémios | — | ✓ | ✓ | ✓ |
 | Aprovar/Rejeitar cartões | — | — | ✓ | ✓ |
 | Ver saldo cartões (todos) | — | — | ✓ | ✓ |
 | Importar Excel | — | — | ✓ | ✓ |

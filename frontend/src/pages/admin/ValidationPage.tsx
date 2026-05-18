@@ -20,7 +20,7 @@ export default function ValidationPage() {
   const { brand } = useBrandStore();
   const { user } = useAuthStore();
   const canValidate = user?.role === 'ADMIN' || user?.role === 'VALIDADOR';
-  const canAnnul = user?.role === 'ADMIN' || user?.role === 'IMPORTADOR';
+  const canAnnul = user?.role === 'ADMIN' || user?.role === 'IMPORTADOR' || user?.role === 'VALIDADOR';
   const [filters, setFilters] = useState({ userId: '', concessaoId: '', area: '', originId: '', search: '' });
   const [selected, setSelected] = useState<string[]>([]);
   const [rejectReason, setRejectReason] = useState('');
