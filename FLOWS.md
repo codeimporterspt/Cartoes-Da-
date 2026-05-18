@@ -345,9 +345,9 @@ Após selecionar a marca, a navegação usa um layout de duas colunas (sidebar f
 
 **Ações por linha:**
 - `[Ver]` → seleciona cartão e mostra secção "Gestão do Cartão" acima
-- `[Inativar]` → abre modal de confirmação (se ACTIVE)
-- `[Reativar]` → direto (se INACTIVE)
-- `[Transferir]` → abre modal (só ADMIN)
+- `[Inativar]` → abre modal de confirmação (se ACTIVE) — disponível para ADMIN (todos os cartões) e USER/IMPORTADOR (cartão próprio)
+- `[Reativar]` → direto (se INACTIVE) — mesmas regras de Inativar
+- `[Transferir]` → abre modal (ADMIN e IMPORTADOR)
 
 ---
 
@@ -370,7 +370,7 @@ Aparece quando há pelo menos 1 cartão. O utilizador seleciona o cartão num dr
 │                                                                  │
 │  [Atualizar Saldo]  [Inativar]                                   │
 │  (só se ACTIVE)     (só se ACTIVE)                               │
-│  [Reativar] (se INACTIVE)    [Transferir] (só ADMIN)             │
+│  [Reativar] (se INACTIVE)    [Transferir] (ADMIN/IMPORTADOR)     │
 │                                                                  │
 │  Histórico de Saldo                                              │
 │  ┌─────────────────────────────────────────────────────────────┐ │
@@ -521,7 +521,7 @@ Aparece quando há pelo menos 1 cartão. O utilizador seleciona o cartão num dr
 
 ---
 
-### 5.7 Modal "Transferir Cartão" (só ADMIN)
+### 5.7 Modal "Transferir Cartão" (ADMIN e IMPORTADOR)
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -566,7 +566,7 @@ Acessível a ADMIN, IMPORTADOR e VALIDADOR.
 │  ┌─────────────────────────────────────────────────────────────┐ │
 │  │☐│ Utilizador │Concessão│ Área │Origem│Matrí│Model│ Valor │...│ │
 │  ├─┼────────────┼─────────┼──────┼──────┼─────┼─────┼───────┼──┤ │
-│  │☐│ João Silva │Honda Lx │ V    │ VN   │AA-01│Civic│250,00€│  │ │  ← [Validar][Rejeitar][Eliminar]
+│  │☐│ João Silva │Honda Lx │ V    │ VN   │AA-01│Civic│250,00€│  │ │  ← [Validar][Rejeitar][Anular][Eliminar]
 │  │☐│ Maria Stos │Hyundai  │ PS   │ AV   │AB-02│Tucs.│320,00€│  │ │
 │  │☐│ ...                                                      │ │
 │  └─────────────────────────────────────────────────────────────┘ │
@@ -579,6 +579,11 @@ Acessível a ADMIN, IMPORTADOR e VALIDADOR.
 ```
 
 **Checkbox de selecionar todos** → seleciona/limpa toda a página.
+
+**Ações por linha:**
+- `[Validar]` / `[Rejeitar]` → só ADMIN e VALIDADOR (`canValidate`); suportam seleção em massa via rodapé fixo
+- `[Anular]` → ADMIN, IMPORTADOR e VALIDADOR (`canAnnul`); individual apenas; define status `ANULADO` (mantém registo)
+- `[Eliminar]` → todos os papéis com acesso à página; elimina fisicamente o prémio
 
 ---
 
@@ -614,6 +619,23 @@ Acessível a ADMIN, IMPORTADOR e VALIDADOR.
 │                                                  │
 │  ┌──────────┐        ┌──────────────────────┐    │
 │  │ Cancelar │        │      Rejeitar        │    │  ← btn vermelho, desativado se motivo vazio
+│  └──────────┘        └──────────────────────┘    │
+└──────────────────────────────────────────────────┘
+```
+
+### Modal "Anular Prémio" (ConfirmModal)
+
+Disponível a ADMIN, IMPORTADOR e VALIDADOR. Só atua sobre prémios `PENDENTE`; o registo fica com estado `ANULADO` (não é eliminado).
+
+```
+┌──────────────────────────────────────────────────┐
+│  Anular Prémio                                   │
+│                                                  │
+│  Tem a certeza que pretende anular este prémio?  │
+│  O registo ficará marcado como Anulado.          │
+│                                                  │
+│  ┌──────────┐        ┌──────────────────────┐    │
+│  │ Cancelar │        │       Anular         │    │  ← btn vermelho
 │  └──────────┘        └──────────────────────┘    │
 └──────────────────────────────────────────────────┘
 ```
