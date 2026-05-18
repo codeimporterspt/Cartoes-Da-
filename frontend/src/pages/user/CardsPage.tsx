@@ -425,7 +425,7 @@ export default function CardsPage() {
                         >
                           Ver
                         </button>
-                        {card.status === 'ACTIVE' && (
+                        {card.status === 'ACTIVE' && (isAdmin || card.userId === user?.id) && (
                           <button
                             className="btn-danger btn btn-sm"
                             onClick={() => setInactivateCard(card)}
@@ -433,7 +433,7 @@ export default function CardsPage() {
                             Inativar
                           </button>
                         )}
-                        {card.status === 'INACTIVE' && (
+                        {card.status === 'INACTIVE' && (isAdmin || card.userId === user?.id) && (
                           <button
                             className="btn-success btn btn-sm"
                             onClick={() => reactivate.mutate(card.id)}
