@@ -861,6 +861,8 @@ Só linhas em estado `PENDING` têm botões de ação.
 
 Layout diferente (UsersLayout, sem sidebar de marca). Acesso: ADMIN e IMPORTADOR.
 
+**Scoping por marca (IMPORTADOR):** o IMPORTADOR vê e gere apenas utilizadores que partilhem pelo menos uma das suas marcas. As brands do IMPORTADOR são relidas da BD a cada pedido (não do JWT) para evitar dados desatualizados. O IMPORTADOR não pode atribuir o papel ADMIN.
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  [Cartões Dá]   [← Voltar]                           [A] logout │
@@ -868,7 +870,7 @@ Layout diferente (UsersLayout, sem sidebar de marca). Acesso: ADMIN e IMPORTADOR
 │  Utilizadores                         [+ Novo Utilizador]        │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐    │
-│  │  [Ativos (12)]  [Pendentes (3)]  [Inativos (2)]          │    │  ← 3 tabs
+│  │  [Ativos (12)]  [Pendentes (3)]  [Inativos (2)]  [Rejeit.]│    │  ← 4 tabs
 │  └──────────────────────────────────────────────────────────┘    │
 │                                                                  │
 │  FILTROS: Pesquisa │ Papel │ Marca │ Concessão       [Limpar]    │
@@ -1049,9 +1051,9 @@ Formulário ──► submete ──► estado PENDING (pendingBrands)
 | Importar Excel | — | — | ✓ | ✓ |
 | Gerir origens | — | — | ✓ | ✓ |
 | Ver histórico carregamentos | — | — | ✓ | ✓ |
-| Gerir utilizadores | — | — | — | ✓ |
-| Resetar password de utilizador | — | — | — | ✓ |
-| Aprovar registos pendentes | — | — | — | ✓ |
+| Gerir utilizadores (marcas próprias) | — | — | ✓ | ✓ |
+| Resetar password de utilizador | — | — | ✓ | ✓ |
+| Aprovar registos pendentes | — | — | ✓ | ✓ |
 
 ---
 
