@@ -185,6 +185,23 @@ export const prizeController = {
     res.json({ message: 'Prémio eliminado' });
   },
 
+  async annul(req: AuthRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+
+    const prize = await prisma.prize.findUnique({ where: { id } });
+    if (!prize) {
+      res.status(404).json({ message: 'Prémio não encontrado' });
+      return;
+    }
+    if (prize.status !== 'PENDENTE') {
+      res.status(400).json({ message: 'Apenas prémios pendentes podem ser anulados' });
+      return;
+    }
+
+    await prisma.prize.update({ where: { id }, data: { status: 'ANULADO' } });
+    res.json({ message: 'Prémio anulado com sucesso' });
+  },
+
   async exportExcel(req: AuthRequest, res: Response): Promise<void> {
     const { userId, concessaoId, area, originId, year, month, status, brand, view } = req.query;
     const isAdmin = req.user!.role === 'ADMIN';

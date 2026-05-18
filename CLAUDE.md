@@ -51,9 +51,10 @@ PORT=3001
 ### Seed credentials
 | Role | Email | Password |
 |---|---|---|
-| ADMIN | admin@hyundai.pt | password123 |
-| USER | joao.silva@hyundai.pt | password123 |
-| USER | maria.santos@hyundai.pt | password123 |
+| ADMIN | admin@cartoes-da.pt | password123 |
+| USER (per brand) | utilizador@{brand-slug}.pt | password123 |
+
+Brand slugs: `byd`, `dongfeng`, `farizon`, `geely`, `honda`, `hyundai`, `nissan`, `xpeng`, `zeekr`. No IMPORTADOR or VALIDADOR is seeded — create one manually via Prisma Studio or the admin UI.
 
 ## Architecture
 
@@ -115,6 +116,13 @@ const isAdmin    = user?.role === 'ADMIN';
 const isElevated = isAdmin || user?.role === 'IMPORTADOR';
 ```
 Use `isAdmin` to guard ADMIN-only UI; use `isElevated` for ADMIN + IMPORTADOR UI (e.g. the Transferir button, backoffice filters).
+
+### CardsPage ownership model
+`myCards` (used in the "Gestão do Cartão" management panel) = all cards for ADMIN, own cards only for everyone else:
+```ts
+const myCards = isAdmin ? cards : cards.filter(c => c.userId === user?.id);
+```
+IMPORTADOR receives all brand cards from the backend (no `userId` filter when elevated), so `myCards` correctly narrows to their own. For action buttons in the cards table that are scoped to "own card", guard with `isAdmin || card.userId === user?.id` — not just role.
 
 ### Multi-brand theming
 - After login, the user picks a brand from `BrandSelector`. This writes a `BrandConfig` to `brandStore` (Zustand, persisted to localStorage).

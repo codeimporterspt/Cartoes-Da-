@@ -20,12 +20,14 @@ export default function ValidationPage() {
   const { brand } = useBrandStore();
   const { user } = useAuthStore();
   const canValidate = user?.role === 'ADMIN' || user?.role === 'VALIDADOR';
+  const canAnnul = user?.role === 'ADMIN' || user?.role === 'IMPORTADOR';
   const [filters, setFilters] = useState({ userId: '', concessaoId: '', area: '', originId: '', search: '' });
   const [selected, setSelected] = useState<string[]>([]);
   const [rejectReason, setRejectReason] = useState('');
   const [modalType, setModalType] = useState<'approve' | 'reject' | 'delete' | null>(null);
   const [actionIds, setActionIds] = useState<string[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [annulId, setAnnulId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['prizes-pending', brand.slug, filters],
@@ -86,6 +88,16 @@ export default function ValidationPage() {
       qc.invalidateQueries({ queryKey: ['prizes-pending'] });
     },
     onError: () => toast.error('Erro ao eliminar prémio'),
+  });
+
+  const annulMutation = useMutation({
+    mutationFn: (id: string) => prizesApi.annul(id),
+    onSuccess: () => {
+      toast.success('Prémio anulado');
+      setAnnulId(null);
+      qc.invalidateQueries({ queryKey: ['prizes-pending'] });
+    },
+    onError: () => toast.error('Erro ao anular prémio'),
   });
 
   function openModal(type: 'approve' | 'reject', ids: string[]) {
@@ -243,6 +255,15 @@ export default function ValidationPage() {
                             </button>
                           </>
                         )}
+                        {canAnnul && (
+                          <button
+                            className="btn-ghost btn btn-sm text-gray-500 hover:text-gray-700"
+                            onClick={() => setAnnulId(p.id)}
+                            title="Anular este prémio"
+                          >
+                            Anular
+                          </button>
+                        )}
                         <button
                           className="btn-ghost btn btn-sm text-red-500 hover:text-red-700"
                           onClick={() => setDeleteId(p.id)}
@@ -314,6 +335,18 @@ export default function ValidationPage() {
         confirmLabel="Eliminar"
         confirmVariant="danger"
         isLoading={deleteMutation.isPending}
+      />
+
+      {/* Annul modal */}
+      <ConfirmModal
+        isOpen={!!annulId}
+        onClose={() => setAnnulId(null)}
+        onConfirm={() => annulMutation.mutate(annulId!)}
+        title="Anular Prémio"
+        message="Tem a certeza que pretende anular este prémio? O registo ficará marcado como Anulado."
+        confirmLabel="Anular"
+        confirmVariant="danger"
+        isLoading={annulMutation.isPending}
       />
 
       {/* Reject modal */}

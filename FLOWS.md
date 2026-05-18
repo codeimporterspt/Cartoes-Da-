@@ -988,7 +988,7 @@ Utilizador submete           Admin valida              Admin/User gere
    PENDING ───────────────────────               │         │
                                  │               ├── Inativar ──► INACTIVE ──► Reativar ──► ACTIVE
                                  └─ Rejeitar ──► REJECTED  │
-                                                            └── Transferir (ADMIN)
+                                                            └── Transferir (ADMIN/IMPORTADOR)
 ```
 
 ### Fluxo de Registo de Novo Utilizador
@@ -1018,9 +1018,10 @@ Formulário ──► submete ──► estado PENDING (pendingBrands)
 | Consultar próprios cartões | ✓ | — | ✓ | ✓ |
 | Criar cartão | ✓ | — | ✓ | ✓ |
 | Inativar/Reativar cartão próprio | ✓ | — | ✓ | ✓ |
-| Transferir cartão | — | — | — | ✓ |
+| Transferir cartão | — | — | ✓ | ✓ |
 | Validar prémios | — | ✓ | — | ✓ |
 | Rejeitar prémios | — | ✓ | — | ✓ |
+| Anular prémios | — | — | ✓ | ✓ |
 | Aprovar/Rejeitar cartões | — | — | ✓ | ✓ |
 | Ver saldo cartões (todos) | — | — | ✓ | ✓ |
 | Importar Excel | — | — | ✓ | ✓ |

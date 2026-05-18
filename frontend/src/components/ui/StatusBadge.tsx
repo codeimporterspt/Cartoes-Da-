@@ -12,6 +12,7 @@ const prizeStatusMap: Record<PrizeStatus, { label: string; className: string }> 
   VALIDADO:  { label: 'Validado',              className: 'badge-green'  },
   CARREGADO: { label: 'Carregado',             className: 'badge-blue'   },
   REJEITADO: { label: 'Rejeitado',             className: 'badge-red'    },
+  ANULADO:   { label: 'Anulado',               className: 'badge-gray'   },
 };
 
 const importStatusMap: Record<ImportStatus, { label: string; className: string }> = {

@@ -1,7 +1,7 @@
 export type Role = 'ADMIN' | 'IMPORTADOR' | 'VALIDADOR' | 'USER';
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'INACTIVE';
 export type CardStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'REJECTED';
-export type PrizeStatus = 'PENDENTE' | 'VALIDADO' | 'CARREGADO' | 'REJEITADO';
+export type PrizeStatus = 'PENDENTE' | 'VALIDADO' | 'CARREGADO' | 'REJEITADO' | 'ANULADO';
 export type ImportStatus = 'PROCESSING' | 'SUCCESS' | 'ERROR';
 
 export interface User {

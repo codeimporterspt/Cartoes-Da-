@@ -77,6 +77,7 @@ export const prizesApi = {
   getPending: (params?: Record<string, string>) => api.get('/prizes/pending', { params }),
   approve: (ids: string[]) => api.post('/prizes/approve', { ids }),
   reject: (ids: string[], reason: string) => api.post('/prizes/reject', { ids, reason }),
+  annul: (id: string) => api.put(`/prizes/${id}/annul`),
   deletePending: (id: string) => api.delete(`/prizes/${id}`),
   exportExcel: (params?: Record<string, string>) =>
     api.get('/prizes/export', { params, responseType: 'blob' }),
